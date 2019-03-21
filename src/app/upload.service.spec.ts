@@ -28,10 +28,6 @@ describe('UploadService - Completed HTTP responses', () => {
     uploadService = TestBed.get(UploadService);
   });
 
-  it('should be created', () => {
-    expect(uploadService).toBeTruthy();
-  });
-
   it('#upload should upload one file to a specified url, and return a status of "ok"', (done: DoneFn) => {
     uploadService.upload(file);
 
@@ -70,21 +66,21 @@ describe('UploadService - Progress HTTP response', () => {
     uploadService = TestBed.get(UploadService);
   });
 
-  it('should be created', () => {
-    expect(uploadService).toBeTruthy();
-  });
-
   it('#upload should report the progress of the file upload', (done: DoneFn) => {
+    // Prepare our mocked service to return an HttpProgressEvent
     mockHttp.request.and.returnValue(
       of({ type: HttpEventType.UploadProgress, loaded: 7, total: 10 } as HttpEvent<HttpProgressEvent>)
     );
-    uploadService.upload(file);
 
+    // Define what we expect after receiving a progress response
     uploadService.getProgress().subscribe(
       (progress: number) => {
         expect(progress).toEqual(70);
         done();
       }
     );
+
+    // Trigger the file upload
+    uploadService.upload(file);
   });
 });
