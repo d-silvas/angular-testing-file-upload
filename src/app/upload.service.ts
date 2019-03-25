@@ -5,8 +5,7 @@ import {
   HttpEventType,
   HttpResponse
 } from '@angular/common/http';
-
-import { Subject, Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class UploadService {
