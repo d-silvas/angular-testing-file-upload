@@ -3,6 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { UploadService } from './upload.service';
 import { HttpClient, HttpEventType, HttpEvent, HttpProgressEvent } from '@angular/common/http';
 import { of } from 'rxjs';
+import { skipWhile } from 'rxjs/operators';
 
 const file = new File(
   ['sample'],
@@ -29,9 +30,10 @@ describe('UploadService - Completed HTTP responses', () => {
   });
 
   it('#upload should upload one file to a specified url, and return a status of "ok"', (done: DoneFn) => {
-    uploadService.upload(file);
-
-    uploadService.getProgress().subscribe(
+    uploadService.upload(file).pipe(
+      // Discard the first progress response
+      skipWhile((progress: number) => progress === 0)
+    ).subscribe(
       (progress: number) => {
         expect(progress).toEqual(100);
       },
@@ -72,15 +74,16 @@ describe('UploadService - Progress HTTP response', () => {
       of({ type: HttpEventType.UploadProgress, loaded: 7, total: 10 } as HttpEvent<HttpProgressEvent>)
     );
 
-    // Define what we expect after receiving a progress response
-    uploadService.getProgress().subscribe(
+    // Trigger the file upload and subscribe for results
+    uploadService.upload(file).pipe(
+      // Discard the first progress response
+      skipWhile((progress: number) => progress === 0)
+    ).subscribe(
       (progress: number) => {
+        // Define what we expect after receiving a progress response
         expect(progress).toEqual(70);
         done();
       }
     );
-
-    // Trigger the file upload
-    uploadService.upload(file);
   });
 });

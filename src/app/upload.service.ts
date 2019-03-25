@@ -6,32 +6,39 @@ import {
   HttpResponse
 } from '@angular/common/http';
 
-import { Subject } from 'rxjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class UploadService {
   public url = 'http://localhost:3000/upload';
-  public progress = new Subject<number>();
 
   constructor(private http: HttpClient) {}
 
-  getProgress() {
-    return this.progress.asObservable();
-  }
-
-  public upload(file: File) {
+  public upload(file: File): Observable<number> {
+    // Create a http post request and pass the form. Tell it to report the upload progress
     const req = new HttpRequest('POST', this.url, file, {
       reportProgress: true
     });
 
-    this.http.request(req).subscribe(event => {
-      if (event.type === HttpEventType.UploadProgress) {
-        const percentDone = Math.round((100 * event.loaded) / event.total);
-        this.progress.next(percentDone);
-      } else if (event instanceof HttpResponse) {
-        this.progress.next(100);
-        this.progress.complete();
+    // Use a subject to keep track of the status
+    const progress = new BehaviorSubject<number>(0);
+
+    // Send the http request and subscribe for progress updates
+    this.http.request(req).subscribe(
+      event => {
+        if (event.type === HttpEventType.UploadProgress) {
+          progress.next(Math.round(100 * event.loaded / event.total));
+        } else if (event instanceof HttpResponse) {
+          progress.next(100);
+          progress.complete();
+        }
+      },
+      error => {
+        progress.next(100);
+        progress.complete();
       }
-    });
+    );
+
+    return progress.asObservable();
   }
 }
