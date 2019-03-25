@@ -5,16 +5,9 @@ import { HttpClient, HttpEventType, HttpEvent, HttpProgressEvent } from '@angula
 import { of } from 'rxjs';
 import { skipWhile } from 'rxjs/operators';
 
-const file = new File(
-  ['sample'],
-  'sample.txt',
-  {
-    type: 'text/plain',
-  }
-);
+const file = new File(['sample'], 'sample.txt', { type: 'text/plain' });
 
-
-describe('UploadService - Completed HTTP responses', () => {
+describe('UploadService - Using req.event()', () => {
   let httpTestingController: HttpTestingController;
   let uploadService: UploadService;
 
@@ -29,29 +22,29 @@ describe('UploadService - Completed HTTP responses', () => {
     uploadService = TestBed.get(UploadService);
   });
 
-  it('#upload should upload one file to a specified url, and return a status of "ok"', (done: DoneFn) => {
+  it('#upload should report the progress of the file upload', (done: DoneFn) => {
+    // Trigger the file upload and subscribe for results
     uploadService.upload(file).pipe(
-      // Discard the first progress response
+      // Discard the first response
       skipWhile((progress: number) => progress === 0)
     ).subscribe(
       (progress: number) => {
-        expect(progress).toEqual(100);
-      },
-      (err) => {},
-      () => {
+        // Define what we expect after receiving the progress response
+        expect(progress).toEqual(70);
         done();
       }
     );
 
+    // 
     const req = httpTestingController.expectOne(uploadService.url);
     expect(req.request.method).toEqual('POST');
-    // Return any normal HttpResponse. The service will interpret it as a successful upload
-    req.flush({}, { status: 200, statusText: 'OK' });
+    // Mock an UploadProgress HttpEvent
+    req.event({ type: HttpEventType.UploadProgress, loaded: 7, total: 10 });
   });
 
 });
 
-describe('UploadService - Progress HTTP response', () => {
+describe('UploadService - Naive approach: mocking HttpClient', () => {
   const mockHttp = {
     request: jasmine.createSpy('request')
   };
@@ -69,14 +62,14 @@ describe('UploadService - Progress HTTP response', () => {
   });
 
   it('#upload should report the progress of the file upload', (done: DoneFn) => {
-    // Prepare our mocked service to return an HttpProgressEvent
+    // Prepare our mocked service to return an UploadProgress event
     mockHttp.request.and.returnValue(
       of({ type: HttpEventType.UploadProgress, loaded: 7, total: 10 } as HttpEvent<HttpProgressEvent>)
     );
 
     // Trigger the file upload and subscribe for results
     uploadService.upload(file).pipe(
-      // Discard the first progress response
+      // Discard the first response
       skipWhile((progress: number) => progress === 0)
     ).subscribe(
       (progress: number) => {

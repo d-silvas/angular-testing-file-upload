@@ -4,5 +4,7 @@ Hi there! This project contains:
 
 - `upload.service.ts`: a single-file upload component. It serves as an example.
 
-TODO: Improve UploadService
-TODO: Include MultipleFileUploadService
+https://angular.io/api/common/http/HttpEventType
+https://angular.io/api/common/http/HttpEvent
+https://www.dotnetcurry.com/angularjs/1448/angular-http-client-interceptors-headers-event
+https://angular.io/api/common/http/testing/TestRequest
